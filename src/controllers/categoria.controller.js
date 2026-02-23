@@ -81,6 +81,42 @@ const categoriaController = {
                 errorMessage: error.message
             })
         }
+    },
+    atualizar: async (req, res) => {
+        try {
+            const categoriaId = Number(req.params);
+            const { descricao } = req.body;
+
+            if(!categoriaId || isNaN(categoriaId)){
+                return res.status(500).json({message: "Você deve inserir um número para encontrar a categoria"})
+            }
+            const categoriaAtual = await prisma.categoria.findUnique({
+                where: { idCategoria: categoriaId }
+            });
+
+            if (!categoriaAtual) {
+                return res.status(404).json({ message: 'Categoria não encontrada.' });
+            }
+            if (!descricao) {
+                return res.status(400).json({ message: 'Você deve inserir pelo menos a descrição para atualizar.' })
+            }
+
+            const result = await prisma.categoria.update({
+                where: { idCategoria: categoriaId },
+                data: {
+                    descricaoCategoria: descricao
+                }
+            })
+
+            return res.status(200).json({ message: 'Categoria atualizada com sucesso', data: result })
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                message: 'Ocorreu um erro no servidor da aplicação.',
+                errorMessage: error.message
+            })
+        }
+
     }
 }
 
