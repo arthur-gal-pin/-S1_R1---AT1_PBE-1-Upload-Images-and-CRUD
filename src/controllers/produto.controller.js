@@ -4,16 +4,17 @@ const produtoController = {
     criar: async (req, res) => {
         try {
             const { nome, preco, categoria } = req.body;
+            if (typeof nome !== "string" || isNaN(preco) || typeof categoria !== "string")
 
 
-            if (!req.file) {
-                return res.status(400).json({ message: 'Arquivo de imagem não enviado' });
-            }
+                if (!req.file) {
+                    return res.status(400).json({ message: 'Arquivo de imagem não enviado' });
+                }
 
 
             const categoriaFormatada = categoria ? String(categoria).toLowerCase() : "";
 
-
+            
             const categoriaEncontrada = await prisma.categoria.findFirst({
                 where: { descricaoCategoria: categoriaFormatada }
             });
@@ -81,7 +82,7 @@ const produtoController = {
             if (!produtoId || typeof produtoId !== Number) {
                 return res.status(400).json({ message: 'Você deve fornecer um ID para o funcionamento do código.' })
             }
-            const result = await prisma.produtos.delete({ where: { idProduto: produtoId } });
+            const result = await prisma.produto.delete({ where: { idProduto: produtoId } });
             console.log("Feita a requisição corretamente (delete).");
             return res.status(200).json({ data: result });
 
@@ -91,6 +92,58 @@ const produtoController = {
                 message: 'Ocorreu um erro no servidor da aplicação.',
                 errorMessage: error.message
             })
+        }
+    },
+    atualizar: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { nome, preco, categoria } = req.body;
+
+            // 1. Verificar se o produto existe
+            const produtoAtual = await prisma.produto.findUnique({
+                where: { idProduto: id }
+            });
+
+            if (!produtoAtual) {
+                return res.status(404).json({ message: 'Produto não encontrado.' });
+            }
+
+            // 2. Lógica para Categoria (se fornecida)
+            let idCategoriaFinal = produtoAtual.idCategoria;
+
+            if (categoria !== undefined) {
+                const categoriaFormatada = String(categoria).toLowerCase();
+                const categoriaEncontrada = await prisma.categoria.findFirst({
+                    where: { descricaoCategoria: categoriaFormatada }
+                });
+
+                if (!categoriaEncontrada) {
+                    return res.status(400).json({ message: 'Categoria não existente.' });
+                }
+                idCategoriaFinal = categoriaEncontrada.idCategoria;
+            }
+
+            // 3. Atualização no Banco de Dados
+            const produtoAtualizado = await prisma.produto.update({
+                where: { idProduto: id },
+                data: {
+                    nomeProduto: nome !== undefined ? nome.trim() : produtoAtual.nomeProduto,
+                    valorProduto: preco !== undefined ? Number(preco) : produtoAtual.valorProduto,
+                    idCategoria: idCategoriaFinal
+                }
+            });
+
+            return res.status(200).json({
+                message: 'Produto atualizado com sucesso!',
+                data: produtoAtualizado
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                message: 'Erro interno no servidor.',
+                error: error.message
+            });
         }
     }
 }
