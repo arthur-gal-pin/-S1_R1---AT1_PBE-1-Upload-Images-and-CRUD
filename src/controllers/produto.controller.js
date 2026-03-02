@@ -65,7 +65,6 @@ const produtoController = {
             }
 
             const result = await prisma.produto.findMany();
-            //Tratar Resultado
             res.status(200).json({ data: result });
 
         } catch (error) {
@@ -99,7 +98,6 @@ const produtoController = {
             const { id } = req.params;
             const { nome, preco, categoria } = req.body;
 
-            // 1. Verificar se o produto existe
             const produtoAtual = await prisma.produto.findUnique({
                 where: { idProduto: id }
             });
@@ -108,7 +106,6 @@ const produtoController = {
                 return res.status(404).json({ message: 'Produto não encontrado.' });
             }
 
-            // 2. Lógica para Categoria (se fornecida)
             let idCategoriaFinal = produtoAtual.idCategoria;
 
             if (categoria !== undefined) {
@@ -123,7 +120,6 @@ const produtoController = {
                 idCategoriaFinal = categoriaEncontrada.idCategoria;
             }
 
-            // 3. Atualização no Banco de Dados
             const produtoAtualizado = await prisma.produto.update({
                 where: { idProduto: id },
                 data: {
